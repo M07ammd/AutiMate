@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+vendor/
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+.metadata
+*.iml
+.gradle/
+.kotlin/
+local.properties
+
+# Build outputs
+dist/
+build/
+coverage/
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+android/app/build/
+ios/build/
+linux/flutter/ephemeral/
+macos/Flutter/ephemeral/
+windows/flutter/ephemeral/
+
+# Secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+
+# Specific files
+speech.wav

@@ -1,0 +1,7 @@
+- [x] Update `ai_engine.py` to remove local camera dependency and `_process_loop` threading.
+- [x] Add `process_frame_base64` method to `ai_engine.py`.
+- [x] Refactor calibration and timestamp logic in `ai_engine.py` to be frame-based instead of time-based.
+- [x] Update `server.py` to include `FrameRequest` pydantic model.
+- [x] Add `POST /analyze_frame` endpoint to `server.py`.
+- [x] Remove `tracker.stop()` from `server.py` shutdown.
+- [x] Create `test_client.py` to verify the new API works with Base64 images.

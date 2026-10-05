@@ -1,0 +1,190 @@
+import { prisma } from "../../config/prisma";
+import { addStarToChild } from "../learning/learning.service";
+import { createNotification } from "../notifications/notifications.service";
+
+const getTodayDate = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+};
+
+export const getRoutineCatalog = async () => {
+    return prisma.routineTemplate.findMany({
+        orderBy: { sortOrder: "asc" },
+    });
+};
+
+export const getRoutineTasks = async (childId: string) => {
+    return prisma.routineTask.findMany({
+        where: { childId },
+        orderBy: { sortOrder: "asc" },
+    });
+};
+
+export const addTemplateToRoutine = async (childId: string, templateId: string) => {
+    const template = await prisma.routineTemplate.findUnique({ where: { id: templateId } });
+    if (!template) throw Object.assign(new Error("Template not found"), { status: 404 });
+    
+    return prisma.routineTask.create({
+        data: {
+            title: template.title,
+            imageUrl: template.imageUrl || "assets/routines/default-task.jpg",
+            childId,
+            sortOrder: template.sortOrder,
+        },
+    }).then(async (task) => {
+        // 🔔 إشعار للـ parent لو الطفل عنده parent
+        const child = await prisma.user.findUnique({
+            where: { id: childId },
+            select: { parentId: true, fullName: true },
+        });
+        if (child?.parentId) {
+            await createNotification({
+                userId: child.parentId,
+                type: "ACTIVITY_REMINDER",
+                title: "مهمة جديدة في الروتين 📋",
+                message: `تمت إضافة مهمة "${template.title}" لروتين ${child.fullName || "الطفل"}`,
+                relatedId: childId,
+                relatedType: "ROUTINE",
+            }).catch(() => {});
+        }
+        return task;
+    });
+};
+
+export const addTask = async (childId: string, title: string, scheduledTime?: string, iconName?: string, imageUrl?: string) => {
+    if (!title || title.trim().length === 0) {
+        throw Object.assign(new Error("Title is required"), { status: 400 });
+    }
+    const task = await prisma.routineTask.create({
+        data: {
+            title: title.trim(),
+            scheduledTime: scheduledTime || null,
+            iconName: iconName || null,
+            imageUrl: imageUrl || "assets/routines/default-task.jpg",
+            childId,
+            sortOrder: 99,
+        },
+    });
+
+    // 🔔 إشعار للـ parent لو الطفل عنده parent
+    const child = await prisma.user.findUnique({
+        where: { id: childId },
+        select: { parentId: true, fullName: true },
+    });
+    if (child?.parentId) {
+        await createNotification({
+            userId: child.parentId,
+            type: "ACTIVITY_REMINDER",
+            title: "مهمة جديدة في الروتين 📋",
+            message: `تمت إضافة مهمة "${title.trim()}" لروتين ${child.fullName || "الطفل"}`,
+            relatedId: childId,
+            relatedType: "ROUTINE",
+        }).catch(() => {});
+    }
+
+    return task;
+};
+
+export const deleteTask = async (childId: string, taskId: string) => {
+    const task = await prisma.routineTask.findUnique({
+        where: { id: taskId },
+        select: { id: true, childId: true },
+    });
+    if (!task) throw Object.assign(new Error("Task not found"), { status: 404 });
+    if (task.childId !== childId) throw Object.assign(new Error("Unauthorized"), { status: 403 });
+
+    await prisma.routineTask.delete({ where: { id: taskId } });
+    return { ok: true, message: "Task deleted successfully" };
+};
+
+export const getTodayRoutine = async (childId: string) => {
+    const today = getTodayDate();
+    const tasks = await prisma.routineTask.findMany({
+        where: { childId },
+        orderBy: { sortOrder: "asc" },
+    });
+    const logs = await prisma.routineLog.findMany({ where: { childId, date: today } });
+    const logMap = new Map(logs.map((l) => [l.taskId, l]));
+
+    return tasks.map((task) => {
+        const log = logMap.get(task.id);
+        return { ...task, status: log?.status || "PENDING", completedAt: log?.completedAt || null };
+    });
+};
+
+export const completeTask = async (childId: string, taskId: string) => {
+    const today = getTodayDate();
+    const task = await prisma.routineTask.findUnique({ where: { id: taskId }, select: { id: true, title: true } });
+    if (!task) throw Object.assign(new Error("Task not found"), { status: 404 });
+
+    await prisma.routineLog.upsert({
+        where: { childId_taskId_date: { childId, taskId, date: today } },
+        create: { childId, taskId, date: today, status: "COMPLETED", completedAt: new Date() },
+        update: { status: "COMPLETED", completedAt: new Date() },
+    });
+
+    await addStarToChild(childId, 2);
+    await checkRoutineBadge(childId);
+
+    // 🔔 إشعار للـ parent لو الطفل عنده parent
+    const child = await prisma.user.findUnique({
+        where: { id: childId },
+        select: { parentId: true, fullName: true },
+    });
+    if (child?.parentId) {
+        await createNotification({
+            userId: child.parentId,
+            type: "PROGRESS_UPDATE",
+            title: "✅ أتمّ الطفل مهمة!",
+            message: `أتمّ ${child.fullName || "الطفل"} مهمة "${task.title}" في الروتين`,
+            relatedId: taskId,
+            relatedType: "ROUTINE",
+        }).catch(() => {});
+    }
+
+    return { ok: true, message: "Task completed!", stars: 2 };
+};
+
+export const skipTask = async (childId: string, taskId: string) => {
+    const today = getTodayDate();
+    const task = await prisma.routineTask.findUnique({ where: { id: taskId }, select: { id: true } });
+    if (!task) throw Object.assign(new Error("Task not found"), { status: 404 });
+
+    await prisma.routineLog.upsert({
+        where: { childId_taskId_date: { childId, taskId, date: today } },
+        create: { childId, taskId, date: today, status: "SKIPPED" },
+        update: { status: "SKIPPED" },
+    });
+
+    return { ok: true, message: "Task skipped" };
+};
+
+export const getRoutineProgress = async (childId: string) => {
+    const today = getTodayDate();
+    const totalTasks = await prisma.routineTask.count({
+        where: { childId },
+    });
+    const completedTasks = await prisma.routineLog.count({
+        where: { childId, date: today, status: "COMPLETED" },
+    });
+    const percentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    return { totalTasks, completedTasks, percentage, date: today };
+};
+
+const checkRoutineBadge = async (childId: string) => {
+    const today = getTodayDate();
+    const totalTasks = await prisma.routineTask.count({
+        where: { childId },
+    });
+    const completedTasks = await prisma.routineLog.count({
+        where: { childId, date: today, status: "COMPLETED" },
+    });
+    if (completedTasks >= totalTasks && totalTasks > 0) {
+        await prisma.badge.upsert({
+            where: { childId_type: { childId, type: "ROUTINE_CHAMPION" } },
+            create: { childId, type: "ROUTINE_CHAMPION" },
+            update: {},
+        });
+    }
+};

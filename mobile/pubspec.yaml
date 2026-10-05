@@ -1,0 +1,75 @@
+name: atuimate_app
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.4.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  lottie: ^3.0.0
+  just_audio: ^0.9.36
+  bloc: ^8.1.0
+  flutter_bloc: ^8.1.2
+  equatable: ^2.0.5
+  intl: any
+  shared_preferences: ^2.1.1
+  flip_card: ^0.7.0
+  confetti: ^0.8.0
+  share_plus: ^7.2.1
+  url_launcher: ^6.3.0
+  syncfusion_flutter_gauges: ^31.1.19
+  speech_to_text: ^7.0.0
+  camera: ^0.10.5+5
+  permission_handler: ^11.3.1
+  http: ^1.2.1
+  dio: ^5.4.0
+  flutter_launcher_icons: ^0.14.4
+  record: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/fonts/
+    - assets/audio/
+    - assets/animations/
+    - assets/routines/
+
+  fonts:
+    - family: NotoSans
+      fonts:
+        - asset: assets/fonts/NotoSans-VariableFont_wdth,wght.ttf
+          weight: 400
+        - asset: assets/fonts/NotoSans-VariableFont_wdth,wght.ttf
+          weight: 700
+        - asset: assets/fonts/NotoSans-Italic-VariableFont_wdth,wght.ttf
+          weight: 400
+          style: italic
+        - asset: assets/fonts/NotoSans-Italic-VariableFont_wdth,wght.ttf
+          weight: 700
+          style: italic
+
+
+
+
+
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/AutiMate1.png"
+  min_sdk_android: 21 # android min sdk min:16, default 21
