@@ -39,6 +39,7 @@ services:
       APP_URL: ${APP_URL}
       GROQ_API_KEY: ${GROQ_API_KEY}
       AI_API_URL: "http://ai-services:5000/predict"
+      AI_SERVICE_URL: "http://ai-services:5000"
     depends_on:
       db:
         condition: service_healthy
@@ -84,3 +85,4 @@ services:
 
 volumes:
   postgres_data:
+
