@@ -35,36 +35,6 @@ CRITICAL INSTRUCTION FOR LANGUAGE:
 - Do not mix languages unless explicitly asked.
 """
 
-RECOMMENDATION_SYSTEM_PROMPT = """
-You are an AI Recommendation Engine.
-Your job is ONLY to generate suggestion cards for a chatbot.
-
-Rules:
-- Return JSON only
-- No explanations
-- No markdown
-- No extra text
-
-You must:
-1. Detect user intent
-2. Generate 5 to 7 recommendation cards
-
-Each card must include:
-- id (number)
-- title (string, short)
-- description (string, brief)
-- duration (string)
-- icon (string: code, fitness, book, school, music, psychology, sports, self_improvement)
-- category (string: learning, health, hobby, wellness, productivity, skill)
-
-Return format (JSON ONLY):
-{
-  "success": true,
-  "intent": "user_intent_here",
-  "cards": [...]
-}
-"""
-
 def detect_language(text: str) -> str:
     if re.search("[\u0600-\u06FF]", text):
         return "ar"
@@ -172,42 +142,4 @@ def text_to_speech(text: str, lang: str = "en") -> str:
     except Exception as e:
         raise Exception(f"Text-to-speech error: {str(e)}")
 
-def analyze_intent_and_generate_recommendations(user_message: str) -> dict:
-    try:
-        model = genai.GenerativeModel(model_name="gemini-2.5-flash", system_instruction=RECOMMENDATION_SYSTEM_PROMPT)
-        response = model.generate_content(user_message)
-        response_text = response.text.strip()
-        
-        if response_text.startswith("```json"):
-            response_text = response_text[7:]
-        elif response_text.startswith("```"):
-            response_text = response_text[3:]
-        
-        if response_text.endswith("```"):
-            response_text = response_text[:-3]
-        
-        data = json.loads(response_text.strip())
-        
-        if not isinstance(data, dict):
-            raise Exception("Invalid JSON format")
-            
-        validated_cards = []
-        for i, card in enumerate(data.get("cards", [])[:7], 1):
-            if isinstance(card, dict):
-                validated_cards.append({
-                    "id": card.get("id", i),
-                    "title": card.get("title", "Untitled"),
-                    "description": card.get("description", ""),
-                    "duration": card.get("duration", "varies"),
-                    "icon": card.get("icon", "self_improvement"),
-                    "category": card.get("category", "general")
-                })
-                
-        return {"success": True, "intent": data.get("intent", "general"), "cards": validated_cards}
-    except Exception:
-        return {
-            "success": True, "intent": "general", "cards": [
-                {"id": 1, "title": "Learn Something New", "description": "Explore a new skill today", "duration": "1 hour", "icon": "school", "category": "learning"},
-                {"id": 2, "title": "Exercise", "description": "Quick workout session", "duration": "30 mins", "icon": "fitness", "category": "health"}
-            ]
-        }
+

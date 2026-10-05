@@ -2,7 +2,7 @@ import uuid
 import json
 import base64
 from flask import Blueprint, request, jsonify
-from services.chat_service import get_gemini_response, transcribe_audio, text_to_speech, analyze_intent_and_generate_recommendations
+from services.chat_service import get_gemini_response, transcribe_audio, text_to_speech
 
 chatbot_bp = Blueprint('chatbot', __name__)
 
@@ -67,21 +67,6 @@ def voice():
         if "insufficient_quota" in error_msg or "rate_limit" in error_msg:
             return jsonify({"error": "Groq quota exceeded."}), 402
         return jsonify({"error": f"Voice processing failed: {error_msg}"}), 500
-
-@chatbot_bp.route("/api/recommend", methods=["POST", "OPTIONS"])
-def recommend():
-    if request.method == "OPTIONS":
-        return jsonify({}), 200
-    
-    data = request.get_json() or {}
-    message = data.get("message", "").strip()
-    
-    if not message:
-        return jsonify({"success": False, "intent": None, "cards": []}), 400
-    
-    result = analyze_intent_and_generate_recommendations(message)
-    status_code = 200 if result.get("success") else 500
-    return jsonify(result), status_code
 
 @chatbot_bp.route("/api/reset", methods=["POST"])
 def reset():
