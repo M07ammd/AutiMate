@@ -97,11 +97,11 @@ Get the entire backend stack running locally with just a few commands:
    Edit `.env` and add your keys (you can get keys from [Google AI Studio](https://aistudio.google.com/) and [Groq Console](https://console.groq.com/)).
 3. **Start the services**:
    ```bash
-   make up
+   docker compose up --build -d  # (or 'make up' if you have Make installed)
    ```
 4. **Seed the database (Optional)**:
    ```bash
-   make seed
+   docker compose exec backend npx prisma db seed  # (or 'make seed')
    ```
 
 ## Services & Ports
@@ -153,3 +153,4 @@ autimate/
 ├── eye-tracking/   # Python FastAPI service for facial landmark tracking
 └── mobile/         # Flutter application codebase
 ```
+
