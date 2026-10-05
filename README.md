@@ -10,16 +10,64 @@ Autimate is a comprehensive ecosystem designed to support individuals with Autis
 - **AI Services**: Predictive screening via a Random Forest model, and a compassionate, autism-specialized LLM chatbot using Gemini and Groq TTS/STT.
 - **Eye-Tracking**: Real-time MediaPipe-based behavioral analysis determining distraction and engagement during activities.
 
-## Architecture
+## System Workflows
 
+### 1. General Architecture
 ```mermaid
 graph TD
-    A[Flutter Mobile App] -->|REST| B(Node.js Backend)
-    B -->|Prisma| C[(PostgreSQL Database)]
-    B -->|Proxy| D[AI Services Flask]
-    A -->|Chat/Voice| D
-    A -->|Video Frames| E[Eye Tracking FastAPI]
-    E -->|Session Summary| B
+    User([User / Child]) -->|Interacts| App[Flutter Mobile App]
+    Parent([Parent]) -->|Interacts| App
+    
+    App <-->|REST API| NodeBackend(Node.js Backend)
+    NodeBackend <-->|Prisma ORM| DB[(PostgreSQL)]
+    
+    App <-->|Voice/Chat| AI[AI Services Flask]
+    NodeBackend -->|Survey Data| AI
+    
+    App -->|Video Frames| EyeTrack[Eye Tracking FastAPI]
+    EyeTrack -->|Session Summary| NodeBackend
+```
+
+### 2. Chatbot & Voice Workflow
+```mermaid
+sequenceDiagram
+    participant U as User (Child)
+    participant A as Flutter App
+    participant AI as AI Services (Flask)
+    participant G as Groq (STT/TTS)
+    participant LLM as Gemini 2.5 Flash
+
+    U->>A: Records Voice Message
+    A->>AI: POST /api/voice (Audio File)
+    AI->>G: Send Audio for Transcription (Whisper)
+    G-->>AI: Returns Text Transcript
+    AI->>LLM: Send Transcript + History + System Prompt
+    LLM-->>AI: Returns AI Response Text
+    AI->>G: Send Text for Speech Synthesis (Orpheus)
+    G-->>AI: Returns Audio File (Base64)
+    AI-->>A: Returns Transcript, Response Text, and Audio
+    A->>U: Plays Audio Response & Shows Text
+```
+
+### 3. Eye-Tracking & Activity Workflow
+```mermaid
+sequenceDiagram
+    participant C as Child
+    participant A as Flutter App
+    participant ET as Eye Tracking Service
+    participant B as Node.js Backend
+    participant P as Parent Dashboard
+
+    C->>A: Starts Learning Activity
+    loop Every few seconds
+        A->>ET: Sends Video Frame (Base64)
+        ET->>ET: MediaPipe Face Landmarks Analysis
+        ET-->>A: Returns {distracted: bool, state: "focused/distracted"}
+    end
+    C->>A: Finishes Activity
+    A->>B: Submits Activity Results + Focus Score
+    B->>B: Saves to Database
+    B-->>P: Updates Parent Dashboard (Charts & Insights)
 ```
 
 ## Tech Stack
