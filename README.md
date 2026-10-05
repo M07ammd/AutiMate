@@ -149,7 +149,6 @@ To run the Flutter app locally (e.g., on an Android emulator):
 autimate/
 ├── ai-services/    # Python Flask API for chatbot, TTS, STT, and survey predictions
 ├── backend/        # Node.js REST API with Prisma ORM
-├── docs/           # Documentation and architecture diagrams
 ├── eye-tracking/   # Python FastAPI service for facial landmark tracking
 └── mobile/         # Flutter application codebase
 ```
